@@ -179,6 +179,22 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Search users by name or email
+// @route   GET /api/users/search
+// @access  Private/Admin
+const searchUsers = asyncHandler(async (req, res) => {
+  const q = req.query.q;
+
+  const users = await User.find({
+    $or: [
+      { name: { $regex: q, $options: 'i' } },
+      { email: { $regex: q, $options: 'i' } },
+    ],
+  });
+
+  res.json(users);
+});
+
 export {
   authUser,
   registerUser,
@@ -189,4 +205,5 @@ export {
   deleteUser,
   getUserById,
   updateUser,
+  searchUsers,
 };
