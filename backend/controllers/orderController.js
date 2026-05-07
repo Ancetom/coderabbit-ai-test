@@ -1,7 +1,7 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Order from '../models/orderModel.js';
 import Product from '../models/productModel.js';
-import { calcPrices } from '../utils/calcPrices.js';
+import { calcPrices, applyItemDiscounts } from '../utils/calcPrices.js';
 import { verifyPayPalPayment, checkIfNewTransaction } from '../utils/paypal.js';
 
 // @desc    Create new order
@@ -37,9 +37,12 @@ const addOrderItems = asyncHandler(async (req, res) => {
       };
     });
 
+    // apply any per-item discounts before calculating totals
+    const discountedItems = applyItemDiscounts(dbOrderItems);
+
     // calculate prices
     const { itemsPrice, taxPrice, shippingPrice, totalPrice } =
-      calcPrices(dbOrderItems);
+      calcPrices(discountedItems);
 
     const order = new Order({
       orderItems: dbOrderItems,
