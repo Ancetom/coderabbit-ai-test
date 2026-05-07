@@ -151,6 +151,28 @@ const getOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
+// @desc    Generate a shareable view-only link for an order
+// @route   POST /api/orders/:id/share
+// @access  Private
+const generateShareableOrderLink = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  if (order.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorised to share this order');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const shareUrl = `${process.env.FRONTEND_URL}/orders/shared/${token}`;
+
+  res.json({ shareUrl });
+});
+
 // @desc    Get sales analytics grouped by product and category
 // @route   GET /api/orders/analytics
 // @access  Private/Admin
@@ -233,4 +255,5 @@ export {
   getOrders,
   exportOrders,
   getSalesAnalytics,
+  generateShareableOrderLink,
 };
