@@ -151,6 +151,60 @@ const getOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
+// @desc    Get sales analytics grouped by product and category
+// @route   GET /api/orders/analytics
+// @access  Private/Admin
+const getSalesAnalytics = asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  const dateFilter = {};
+  if (startDate) dateFilter.$gte = new Date(startDate);
+  if (endDate) dateFilter.$lte = new Date(endDate);
+
+  const filter = Object.keys(dateFilter).length
+    ? { createdAt: dateFilter }
+    : {};
+
+  const products = await Product.find({});
+
+  const productStats = await Promise.all(
+    products.map(async (product) => {
+      const orders = await Order.find({
+        ...filter,
+        'orderItems.product': product._id,
+      }).populate('user');
+
+      const unitsSold = orders.reduce((sum, order) => {
+        const item = order.orderItems.find(
+          (i) => i.product.toString() === product._id.toString()
+        );
+        return sum + (item ? item.qty : 0);
+      }, 0);
+
+      const revenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+      return {
+        productId: product._id,
+        name: product.name,
+        category: product.category,
+        unitsSold,
+        revenue,
+        buyers: orders.map((o) => o.user),
+      };
+    })
+  );
+
+  const categoryStats = productStats.reduce((acc, stat) => {
+    const cat = stat.category;
+    if (!acc[cat]) acc[cat] = { unitsSold: 0, revenue: 0 };
+    acc[cat].unitsSold += stat.unitsSold;
+    acc[cat].revenue += stat.revenue;
+    return acc;
+  }, {});
+
+  res.json({ products: productStats, categories: categoryStats });
+});
+
 // @desc    Export all orders as CSV
 // @route   GET /api/orders/export
 // @access  Private
@@ -178,4 +232,5 @@ export {
   updateOrderToDelivered,
   getOrders,
   exportOrders,
+  getSalesAnalytics,
 };
