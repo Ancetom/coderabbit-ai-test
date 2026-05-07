@@ -154,6 +154,39 @@ const getTopProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
+// @desc    Get low stock products
+// @route   GET /api/products/low-stock
+// @access  Private/Admin
+const getLowStockProducts = asyncHandler(async (req, res) => {
+  const threshold = 5;
+
+  const products = await Product.find({ countInStock: { $lte: threshold } });
+  res.json(products);
+});
+
+// @desc    Update product stock level
+// @route   PUT /api/products/:id/stock
+// @access  Private/Admin
+const updateStock = asyncHandler(async (req, res) => {
+  const { quantity, operation } = req.body;
+
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  if (operation === 'add') {
+    product.countInStock += quantity;
+  } else if (operation === 'remove') {
+    product.countInStock -= quantity;
+  }
+
+  const updatedProduct = await product.save();
+  res.json(updatedProduct);
+});
+
 export {
   getProducts,
   getProductById,
@@ -162,4 +195,6 @@ export {
   deleteProduct,
   createProductReview,
   getTopProducts,
+  getLowStockProducts,
+  updateStock,
 };
