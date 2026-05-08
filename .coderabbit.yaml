@@ -1,0 +1,52 @@
+language: "en-US"
+
+reviews:
+  high_level_summary: true
+  review_status: true
+  poem: false
+  collapse_walkthrough: false
+
+  path_instructions:
+    - path: "backend/**"
+      instructions: |
+        Apply the following project-specific conventions when reviewing backend code:
+
+        **Configuration values**
+        All thresholds, limits, and magic numbers must be sourced from process.env, never
+        hardcoded. Examples: process.env.LOW_STOCK_THRESHOLD, process.env.PAGINATION_LIMIT.
+        Flag any literal number used as a configurable threshold.
+
+        **Password exclusion**
+        Every Mongoose query or populate() call that returns User documents must exclude the
+        password field. Use .select('-password') on direct queries. Use
+        .populate('user', 'name email') or a similar safe field list — never .populate('user')
+        without field projection.
+
+        **N+1 query pattern**
+        Do not issue a separate database query per document inside a loop or Promise.all. For
+        example, calling Order.find() once per product inside a products.map() is an N+1
+        pattern. Use aggregation pipelines or a single query with $in to fetch all required
+        documents at once.
+
+        **Date and timezone handling**
+        Never pass raw date strings from req.query or req.body directly into new Date() for
+        use in database queries. Always validate and normalise to UTC: parse the string, verify
+        it is a valid date, and construct an explicit UTC Date object before querying.
+
+        **CSV output sanitisation**
+        Any field written into a CSV row must be sanitised against formula injection. Wrap
+        each field in double quotes and escape any field whose value starts with =, +, -, or @.
+
+        **Numeric input coercion**
+        Fields from req.body or req.query used in arithmetic must be explicitly coerced to
+        Number before use. For example: const quantity = Number(req.body.quantity). Without
+        coercion, += and -= on a string input produce concatenation instead of arithmetic.
+
+        **Stock bounds**
+        countInStock must never be saved with a negative value. After any decrement operation,
+        validate that product.countInStock >= 0 before calling save().
+
+        **Discount representation**
+        The discount field on Product documents is stored as a whole percentage integer (0–100).
+        A value of 20 means 20% off. The correct discounted price formula is:
+        price * (1 - discount / 100). Never treat discount as a decimal fraction (0.0–1.0).
