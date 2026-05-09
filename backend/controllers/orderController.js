@@ -1,7 +1,7 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Order from '../models/orderModel.js';
 import Product from '../models/productModel.js';
-import { calcPrices } from '../utils/calcPrices.js';
+import { calcPrices, applyItemDiscounts } from '../utils/calcPrices.js';
 import { verifyPayPalPayment, checkIfNewTransaction } from '../utils/paypal.js';
 
 // @desc    Create new order
@@ -37,9 +37,12 @@ const addOrderItems = asyncHandler(async (req, res) => {
       };
     });
 
+    // apply any per-item discounts before calculating totals
+    const discountedItems = applyItemDiscounts(dbOrderItems);
+
     // calculate prices
     const { itemsPrice, taxPrice, shippingPrice, totalPrice } =
-      calcPrices(dbOrderItems);
+      calcPrices(discountedItems);
 
     const order = new Order({
       orderItems: dbOrderItems,
@@ -148,6 +151,101 @@ const getOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
+// @desc    Generate a shareable view-only link for an order
+// @route   POST /api/orders/:id/share
+// @access  Private
+const generateShareableOrderLink = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  if (order.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorised to share this order');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const shareUrl = `${process.env.FRONTEND_URL}/orders/shared/${token}`;
+
+  res.json({ shareUrl });
+});
+
+// @desc    Get sales analytics grouped by product and category
+// @route   GET /api/orders/analytics
+// @access  Private/Admin
+const getSalesAnalytics = asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  const dateFilter = {};
+  if (startDate) dateFilter.$gte = new Date(startDate);
+  if (endDate) dateFilter.$lte = new Date(endDate);
+
+  const filter = Object.keys(dateFilter).length
+    ? { createdAt: dateFilter }
+    : {};
+
+  const products = await Product.find({});
+
+  const productStats = await Promise.all(
+    products.map(async (product) => {
+      const orders = await Order.find({
+        ...filter,
+        'orderItems.product': product._id,
+      }).populate('user');
+
+      const unitsSold = orders.reduce((sum, order) => {
+        const item = order.orderItems.find(
+          (i) => i.product.toString() === product._id.toString()
+        );
+        return sum + (item ? item.qty : 0);
+      }, 0);
+
+      const revenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+      return {
+        productId: product._id,
+        name: product.name,
+        category: product.category,
+        unitsSold,
+        revenue,
+        buyers: orders.map((o) => o.user),
+      };
+    })
+  );
+
+  const categoryStats = productStats.reduce((acc, stat) => {
+    const cat = stat.category;
+    if (!acc[cat]) acc[cat] = { unitsSold: 0, revenue: 0 };
+    acc[cat].unitsSold += stat.unitsSold;
+    acc[cat].revenue += stat.revenue;
+    return acc;
+  }, {});
+
+  res.json({ products: productStats, categories: categoryStats });
+});
+
+// @desc    Export all orders as CSV
+// @route   GET /api/orders/export
+// @access  Private
+const exportOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({}).populate('user', 'name email');
+
+  const header = 'Order ID,Customer,Email,Total,Paid,Delivered,Date';
+  const rows = orders.map(
+    (order) =>
+      `${order._id},${order.user.name},${order.user.email},${order.totalPrice},${order.isPaid},${order.isDelivered},${order.createdAt}`
+  );
+
+  const csv = [header, ...rows].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="orders.csv"');
+  res.send(csv);
+});
+
 export {
   addOrderItems,
   getMyOrders,
@@ -155,4 +253,7 @@ export {
   updateOrderToPaid,
   updateOrderToDelivered,
   getOrders,
+  exportOrders,
+  getSalesAnalytics,
+  generateShareableOrderLink,
 };

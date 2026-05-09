@@ -2,6 +2,16 @@ function addDecimals(num) {
   return (Math.round(num * 100) / 100).toFixed(2);
 }
 
+export function applyItemDiscounts(orderItems) {
+  return orderItems.map((item) => ({
+    ...item,
+    price:
+      item.discount > 0
+        ? Math.round(item.price * (1 - item.discount) * 100) / 100
+        : item.price,
+  }));
+}
+
 // NOTE: the code below has been changed from the course code to fix an issue
 // with type coercion of strings to numbers.
 // Our addDecimals function expects a number and returns a string, so it is not
