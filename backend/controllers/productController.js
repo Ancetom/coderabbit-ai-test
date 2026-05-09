@@ -210,6 +210,23 @@ const searchProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
+// @desc    Generate a review invitation link for a product
+// @route   POST /api/products/:id/invite
+// @access  Private/Admin
+const generateReviewInviteLink = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const inviteUrl = `${process.env.FRONTEND_URL}/products/${product._id}/review?token=${token}`;
+
+  res.json({ inviteUrl });
+});
+
 export {
   getProducts,
   getProductById,
@@ -221,4 +238,5 @@ export {
   getLowStockProducts,
   updateStock,
   searchProducts,
+  generateReviewInviteLink,
 };
