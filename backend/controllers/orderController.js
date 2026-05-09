@@ -246,6 +246,35 @@ const exportOrders = asyncHandler(async (req, res) => {
   res.send(csv);
 });
 
+// @desc    Get order report for a date range
+// @route   GET /api/orders/report
+// @access  Private/Admin
+const getOrderReport = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+
+  const filter = {};
+  if (from) filter.createdAt = { ...filter.createdAt, $gte: new Date(from) };
+  if (to) filter.createdAt = { ...filter.createdAt, $lte: new Date(to) };
+
+  const orders = await Order.find(filter)
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 });
+
+  const report = {
+    totalOrders: orders.length,
+    totalRevenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+    orders: orders.map((o) => ({
+      id: o._id,
+      customer: o.user.name,
+      total: o.totalPrice,
+      paid: o.isPaid,
+      date: o.createdAt,
+    })),
+  };
+
+  res.json(report);
+});
+
 // @desc    Apply a coupon code to an order
 // @route   POST /api/orders/:id/coupon
 // @access  Private
@@ -318,4 +347,5 @@ export {
   generateShareableOrderLink,
   applyCoupon,
   getCouponUsageStats,
+  getOrderReport,
 };

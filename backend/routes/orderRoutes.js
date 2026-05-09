@@ -12,6 +12,7 @@ import {
   generateShareableOrderLink,
   applyCoupon,
   getCouponUsageStats,
+  getOrderReport,
 } from '../controllers/orderController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -20,6 +21,7 @@ router.route('/mine').get(protect, getMyOrders);
 router.route('/export').get(protect, exportOrders);
 router.route('/analytics').get(protect, getSalesAnalytics);
 router.route('/coupon-stats').get(protect, getCouponUsageStats);
+router.route('/report').get(protect, getOrderReport);
 router.route('/:id').get(protect, getOrderById);
 router.route('/:id/pay').put(protect, updateOrderToPaid);
 router.route('/:id/deliver').put(protect, admin, updateOrderToDelivered);
