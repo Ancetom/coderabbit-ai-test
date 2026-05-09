@@ -187,6 +187,29 @@ const updateStock = asyncHandler(async (req, res) => {
   res.json(updatedProduct);
 });
 
+// @desc    Search products with filters
+// @route   GET /api/products/search
+// @access  Public
+const searchProducts = asyncHandler(async (req, res) => {
+  const { q, minPrice, maxPrice, category, brand } = req.query;
+
+  const filter = {};
+
+  if (q) {
+    filter.name = { $regex: q, $options: 'i' };
+  }
+
+  if (minPrice) filter.price = { ...filter.price, $gte: minPrice };
+  if (maxPrice) filter.price = { ...filter.price, $lte: maxPrice };
+  if (category) filter.category = category;
+  if (brand) filter.brand = brand;
+
+  const limit = 20;
+  const products = await Product.find(filter).limit(limit);
+
+  res.json(products);
+});
+
 export {
   getProducts,
   getProductById,
@@ -197,4 +220,5 @@ export {
   getTopProducts,
   getLowStockProducts,
   updateStock,
+  searchProducts,
 };
