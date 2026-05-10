@@ -10,12 +10,16 @@ import {
   getTopProducts,
   getLowStockProducts,
   updateStock,
+  searchProducts,
+  generateReviewInviteLink,
 } from '../controllers/productController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import checkObjectId from '../middleware/checkObjectId.js';
 
 router.route('/').get(getProducts).post(protect, admin, createProduct);
+router.get('/search', searchProducts);
 router.route('/:id/reviews').post(protect, checkObjectId, createProductReview);
+router.route('/:id/invite').post(protect, admin, checkObjectId, generateReviewInviteLink);
 router.route('/:id/stock').put(protect, admin, checkObjectId, updateStock);
 router.get('/top', getTopProducts);
 router

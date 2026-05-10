@@ -187,6 +187,46 @@ const updateStock = asyncHandler(async (req, res) => {
   res.json(updatedProduct);
 });
 
+// @desc    Search products with filters
+// @route   GET /api/products/search
+// @access  Public
+const searchProducts = asyncHandler(async (req, res) => {
+  const { q, minPrice, maxPrice, category, brand } = req.query;
+
+  const filter = {};
+
+  if (q) {
+    filter.name = { $regex: q, $options: 'i' };
+  }
+
+  if (minPrice) filter.price = { ...filter.price, $gte: minPrice };
+  if (maxPrice) filter.price = { ...filter.price, $lte: maxPrice };
+  if (category) filter.category = category;
+  if (brand) filter.brand = brand;
+
+  const limit = 20;
+  const products = await Product.find(filter).limit(limit);
+
+  res.json(products);
+});
+
+// @desc    Generate a review invitation link for a product
+// @route   POST /api/products/:id/invite
+// @access  Private/Admin
+const generateReviewInviteLink = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const inviteUrl = `${process.env.FRONTEND_URL}/products/${product._id}/review?token=${token}`;
+
+  res.json({ inviteUrl });
+});
+
 export {
   getProducts,
   getProductById,
@@ -197,4 +237,6 @@ export {
   getTopProducts,
   getLowStockProducts,
   updateStock,
+  searchProducts,
+  generateReviewInviteLink,
 };

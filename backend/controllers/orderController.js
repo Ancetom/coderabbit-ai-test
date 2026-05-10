@@ -246,6 +246,95 @@ const exportOrders = asyncHandler(async (req, res) => {
   res.send(csv);
 });
 
+// @desc    Get order report for a date range
+// @route   GET /api/orders/report
+// @access  Private/Admin
+const getOrderReport = asyncHandler(async (req, res) => {
+  const { from, to } = req.query;
+
+  const filter = {};
+  if (from) filter.createdAt = { ...filter.createdAt, $gte: new Date(from) };
+  if (to) filter.createdAt = { ...filter.createdAt, $lte: new Date(to) };
+
+  const orders = await Order.find(filter)
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 });
+
+  const report = {
+    totalOrders: orders.length,
+    totalRevenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+    orders: orders.map((o) => ({
+      id: o._id,
+      customer: o.user.name,
+      total: o.totalPrice,
+      paid: o.isPaid,
+      date: o.createdAt,
+    })),
+  };
+
+  res.json(report);
+});
+
+// @desc    Apply a coupon code to an order
+// @route   POST /api/orders/:id/coupon
+// @access  Private
+const applyCoupon = asyncHandler(async (req, res) => {
+  const { code } = req.body;
+
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+
+  const MIN_ORDER_VALUE = 50;
+
+  if (order.totalPrice < MIN_ORDER_VALUE) {
+    res.status(400);
+    throw new Error(`Coupon requires a minimum order value of ${MIN_ORDER_VALUE}`);
+  }
+
+  const VALID_COUPONS = {
+    SAVE10: 10,
+    SAVE20: 20,
+    WELCOME: 15,
+  };
+
+  const discount = VALID_COUPONS[code.toUpperCase()];
+
+  if (!discount) {
+    res.status(400);
+    throw new Error('Invalid coupon code');
+  }
+
+  order.totalPrice = order.totalPrice - discount;
+
+  const updatedOrder = await order.save();
+  res.json(updatedOrder);
+});
+
+// @desc    Get coupon usage statistics
+// @route   GET /api/orders/coupon-stats
+// @access  Private/Admin
+const getCouponUsageStats = asyncHandler(async (req, res) => {
+  const COUPON_CODES = ['SAVE10', 'SAVE20', 'WELCOME'];
+  const MAX_USES = 100;
+
+  const stats = await Promise.all(
+    COUPON_CODES.map(async (code) => {
+      const uses = await Order.countDocuments({ couponCode: code });
+      return {
+        code,
+        uses,
+        remaining: MAX_USES - uses,
+      };
+    })
+  );
+
+  res.json(stats);
+});
+
 export {
   addOrderItems,
   getMyOrders,
@@ -256,4 +345,7 @@ export {
   exportOrders,
   getSalesAnalytics,
   generateShareableOrderLink,
+  applyCoupon,
+  getCouponUsageStats,
+  getOrderReport,
 };
