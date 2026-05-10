@@ -206,7 +206,12 @@ const generateReferralCode = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  const referralCode = Math.random().toString(36).substring(2).toUpperCase();
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const codeLength = 8;
+  const referralCode = Array.from(
+    { length: codeLength },
+    () => alphabet[Math.floor(Math.random() * alphabet.length)]
+  ).join('');
 
   res.json({ referralCode, userId: user._id });
 });
