@@ -195,6 +195,22 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Generate a referral code for the current user
+// @route   GET /api/users/referral-code
+// @access  Private
+const generateReferralCode = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const referralCode = Math.random().toString(36).substring(2).toUpperCase();
+
+  res.json({ referralCode, userId: user._id });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +222,5 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  generateReferralCode,
 };
