@@ -210,6 +210,21 @@ const searchProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
+// @desc    Get a randomly selected in-stock product to feature on the homepage
+// @route   GET /api/products/featured
+// @access  Public
+const getFeaturedProduct = asyncHandler(async (req, res) => {
+  const products = await Product.find({ countInStock: { $gt: 0 } });
+
+  if (products.length === 0) {
+    res.status(404);
+    throw new Error('No products available');
+  }
+
+  const featured = products[Math.floor(Math.random() * products.length)];
+  res.json(featured);
+});
+
 // @desc    Generate a review invitation link for a product
 // @route   POST /api/products/:id/invite
 // @access  Private/Admin
@@ -239,4 +254,5 @@ export {
   updateStock,
   searchProducts,
   generateReviewInviteLink,
+  getFeaturedProduct,
 };
