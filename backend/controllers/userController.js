@@ -195,6 +195,23 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Generate a shareable link for the user's wishlist
+// @route   POST /api/users/wishlist-share
+// @access  Private
+const generateWishlistShareLink = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const shareUrl = `${process.env.FRONTEND_URL}/wishlist/shared/${token}`;
+
+  res.json({ shareUrl });
+});
+
 // @desc    Request a password reset link
 // @route   POST /api/users/reset-password
 // @access  Public
@@ -256,4 +273,5 @@ export {
   searchUsers,
   generateReferralCode,
   requestPasswordReset,
+  generateWishlistShareLink,
 };

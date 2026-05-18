@@ -12,6 +12,7 @@ import {
   searchUsers,
   generateReferralCode,
   requestPasswordReset,
+  generateWishlistShareLink,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -26,6 +27,7 @@ router
   .put(protect, updateUserProfile);
 router.get('/search', protect, admin, searchUsers);
 router.post('/reset-password', requestPasswordReset);
+router.post('/wishlist-share', protect, generateWishlistShareLink);
 router.get('/referral-code', protect, generateReferralCode);
 router
   .route('/:id')
