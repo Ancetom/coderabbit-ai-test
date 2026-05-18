@@ -195,6 +195,33 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Request a password reset link
+// @route   POST /api/users/reset-password
+// @access  Public
+const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('No account found with that email');
+  }
+
+  const resetToken =
+    Math.random().toString(36).substring(2) +
+    Math.random().toString(36).substring(2);
+
+  user.resetToken = resetToken;
+  user.resetTokenExpiry = Date.now() + 3600000;
+
+  await user.save();
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  res.json({ message: 'Password reset link sent to your email', resetUrl });
+});
+
 // @desc    Generate a referral code for the current user
 // @route   GET /api/users/referral-code
 // @access  Private
@@ -228,4 +255,5 @@ export {
   updateUser,
   searchUsers,
   generateReferralCode,
+  requestPasswordReset,
 };

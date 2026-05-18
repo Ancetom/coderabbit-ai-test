@@ -11,6 +11,7 @@ import {
   updateUser,
   searchUsers,
   generateReferralCode,
+  requestPasswordReset,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -24,6 +25,7 @@ router
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 router.get('/search', protect, admin, searchUsers);
+router.post('/reset-password', requestPasswordReset);
 router.get('/referral-code', protect, generateReferralCode);
 router
   .route('/:id')
