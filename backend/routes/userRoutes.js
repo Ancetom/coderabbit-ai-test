@@ -11,6 +11,7 @@ import {
   updateUser,
   searchUsers,
   getUserCount,
+  checkEmailAvailability,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -25,6 +26,7 @@ router
   .put(protect, updateUserProfile);
 router.get('/search', protect, admin, searchUsers);
 router.get('/count', protect, admin, getUserCount);
+router.get('/check-email', checkEmailAvailability);
 router
   .route('/:id')
   .delete(protect, admin, deleteUser)
