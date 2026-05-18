@@ -195,6 +195,14 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Get total registered user count
+// @route   GET /api/users/count
+// @access  Private/Admin
+const getUserCount = asyncHandler(async (req, res) => {
+  const count = await User.countDocuments({});
+  res.json({ count });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +214,5 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  getUserCount,
 };
