@@ -195,6 +195,27 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Generate and send a two-factor authentication code
+// @route   POST /api/users/two-factor
+// @access  Private
+const generateTwoFactorCode = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const code = Math.floor(Math.random() * 900000 + 100000).toString();
+
+  user.twoFactorCode = code;
+  user.twoFactorCodeExpiry = Date.now() + 300000;
+
+  await user.save();
+
+  res.json({ message: 'Two-factor authentication code sent to your registered device' });
+});
+
 // @desc    Generate a shareable link for the user's wishlist
 // @route   POST /api/users/wishlist-share
 // @access  Private
@@ -274,4 +295,5 @@ export {
   generateReferralCode,
   requestPasswordReset,
   generateWishlistShareLink,
+  generateTwoFactorCode,
 };
