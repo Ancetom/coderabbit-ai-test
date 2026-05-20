@@ -195,6 +195,21 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Validate whether an email can receive a product review invite
+// @route   GET /api/users/validate-invite-email
+// @access  Public
+const validateEmailForInvite = asyncHandler(async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    res.status(400);
+    throw new Error('Email is required');
+  }
+
+  const user = await User.findOne({ email }).select('-password');
+  res.json({ registered: !!user });
+});
+
 // @desc    Get recent registration activity for admin dashboard
 // @route   GET /api/users/activity
 // @access  Private/Admin
@@ -222,4 +237,5 @@ export {
   updateUser,
   searchUsers,
   getUserActivitySummary,
+  validateEmailForInvite,
 };
