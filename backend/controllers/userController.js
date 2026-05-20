@@ -195,6 +195,21 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Check whether a display name is already taken
+// @route   GET /api/users/check-name
+// @access  Public
+const checkDisplayNameAvailability = asyncHandler(async (req, res) => {
+  const { name } = req.query;
+
+  if (!name) {
+    res.status(400);
+    throw new Error('Name is required');
+  }
+
+  const user = await User.findOne({ name }).select('-password');
+  res.json({ available: !user });
+});
+
 // @desc    Validate whether an email can receive a product review invite
 // @route   GET /api/users/validate-invite-email
 // @access  Public
@@ -238,4 +253,5 @@ export {
   searchUsers,
   getUserActivitySummary,
   validateEmailForInvite,
+  checkDisplayNameAvailability,
 };

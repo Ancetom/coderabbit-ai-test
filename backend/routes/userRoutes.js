@@ -12,6 +12,7 @@ import {
   searchUsers,
   getUserActivitySummary,
   validateEmailForInvite,
+  checkDisplayNameAvailability,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -27,6 +28,7 @@ router
 router.get('/search', protect, admin, searchUsers);
 router.get('/activity', protect, admin, getUserActivitySummary);
 router.get('/validate-invite-email', validateEmailForInvite);
+router.get('/check-name', checkDisplayNameAvailability);
 router
   .route('/:id')
   .delete(protect, admin, deleteUser)
