@@ -10,6 +10,7 @@ import {
   getUserById,
   updateUser,
   searchUsers,
+  getUserActivitySummary,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -23,6 +24,7 @@ router
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 router.get('/search', protect, admin, searchUsers);
+router.get('/activity', protect, admin, getUserActivitySummary);
 router
   .route('/:id')
   .delete(protect, admin, deleteUser)

@@ -195,6 +195,21 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Get recent registration activity for admin dashboard
+// @route   GET /api/users/activity
+// @access  Private/Admin
+const getUserActivitySummary = asyncHandler(async (req, res) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [total, recent] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+  ]);
+
+  res.json({ totalUsers: total, newUsersLast30Days: recent });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +221,5 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  getUserActivitySummary,
 };
