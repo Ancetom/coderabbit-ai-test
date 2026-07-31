@@ -195,6 +195,51 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Check whether a display name is already taken
+// @route   GET /api/users/check-name
+// @access  Public
+const checkDisplayNameAvailability = asyncHandler(async (req, res) => {
+  const { name } = req.query;
+
+  if (!name) {
+    res.status(400);
+    throw new Error('Name is required');
+  }
+
+  const user = await User.findOne({ name }).select('-password');
+  res.json({ available: !user });
+});
+
+// @desc    Validate whether an email can receive a product review invite
+// @route   GET /api/users/validate-invite-email
+// @access  Public
+const validateEmailForInvite = asyncHandler(async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    res.status(400);
+    throw new Error('Email is required');
+  }
+
+  const user = await User.findOne({ email }).select('-password');
+  res.json({ registered: !!user });
+});
+
+// @desc    Get recent registration activity for admin dashboard
+// @route   GET /api/users/activity
+// @access  Private/Admin
+const getUserActivitySummary = asyncHandler(async (req, res) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [total, recent] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+  ]);
+
+  res.json({ totalUsers: total, newUsersLast30Days: recent });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +251,7 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  getUserActivitySummary,
+  validateEmailForInvite,
+  checkDisplayNameAvailability,
 };
