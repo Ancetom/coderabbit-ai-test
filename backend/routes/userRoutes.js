@@ -10,6 +10,10 @@ import {
   getUserById,
   updateUser,
   searchUsers,
+  generateReferralCode,
+  requestPasswordReset,
+  generateWishlistShareLink,
+  generateTwoFactorCode,
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -23,6 +27,10 @@ router
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 router.get('/search', protect, admin, searchUsers);
+router.post('/reset-password', requestPasswordReset);
+router.post('/wishlist-share', protect, generateWishlistShareLink);
+router.post('/two-factor', protect, generateTwoFactorCode);
+router.get('/referral-code', protect, generateReferralCode);
 router
   .route('/:id')
   .delete(protect, admin, deleteUser)

@@ -335,6 +335,21 @@ const getCouponUsageStats = asyncHandler(async (req, res) => {
   res.json(stats);
 });
 
+// @desc    Get system health stats for orders
+// @route   GET /api/orders/health
+// @access  Private/Admin
+const getOrderSystemHealth = asyncHandler(async (req, res) => {
+  const [totalOrders, paidOrders, deliveredOrders] = await Promise.all([
+    Order.countDocuments({}),
+    Order.countDocuments({ isPaid: true }),
+    Order.countDocuments({ isDelivered: true }),
+  ]);
+
+  console.log(`[AUDIT] Health check by admin ${req.user._id} at ${new Date().toISOString()}`);
+
+  res.json({ totalOrders, paidOrders, deliveredOrders });
+});
+
 export {
   addOrderItems,
   getMyOrders,
@@ -348,4 +363,5 @@ export {
   applyCoupon,
   getCouponUsageStats,
   getOrderReport,
+  getOrderSystemHealth,
 };

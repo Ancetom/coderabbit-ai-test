@@ -21,6 +21,18 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    resetToken: {
+      type: String,
+    },
+    resetTokenExpiry: {
+      type: Date,
+    },
+    twoFactorCode: {
+      type: String,
+    },
+    twoFactorCodeExpiry: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

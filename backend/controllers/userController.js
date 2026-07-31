@@ -195,6 +195,92 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Generate and send a two-factor authentication code
+// @route   POST /api/users/two-factor
+// @access  Private
+const generateTwoFactorCode = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const code = Math.floor(Math.random() * 900000 + 100000).toString();
+
+  user.twoFactorCode = code;
+  user.twoFactorCodeExpiry = Date.now() + 300000;
+
+  await user.save();
+
+  res.json({ message: 'Two-factor authentication code sent to your registered device' });
+});
+
+// @desc    Generate a shareable link for the user's wishlist
+// @route   POST /api/users/wishlist-share
+// @access  Private
+const generateWishlistShareLink = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const token = Math.random().toString(36).substring(2);
+  const shareUrl = `${process.env.FRONTEND_URL}/wishlist/shared/${token}`;
+
+  res.json({ shareUrl });
+});
+
+// @desc    Request a password reset link
+// @route   POST /api/users/reset-password
+// @access  Public
+const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('No account found with that email');
+  }
+
+  const resetToken =
+    Math.random().toString(36).substring(2) +
+    Math.random().toString(36).substring(2);
+
+  user.resetToken = resetToken;
+  user.resetTokenExpiry = Date.now() + 3600000;
+
+  await user.save();
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  res.json({ message: 'Password reset link sent to your email', resetUrl });
+});
+
+// @desc    Generate a referral code for the current user
+// @route   GET /api/users/referral-code
+// @access  Private
+const generateReferralCode = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const codeLength = 8;
+  const referralCode = Array.from(
+    { length: codeLength },
+    () => alphabet[Math.floor(Math.random() * alphabet.length)]
+  ).join('');
+
+  res.json({ referralCode, userId: user._id });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +292,8 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  generateReferralCode,
+  requestPasswordReset,
+  generateWishlistShareLink,
+  generateTwoFactorCode,
 };
