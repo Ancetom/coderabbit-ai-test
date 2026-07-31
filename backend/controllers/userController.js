@@ -195,6 +195,29 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Check whether an email address is available for registration
+// @route   GET /api/users/check-email
+// @access  Public
+const checkEmailAvailability = asyncHandler(async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    res.status(400);
+    throw new Error('Email is required');
+  }
+
+  const user = await User.findOne({ email });
+  res.json({ available: !user });
+});
+
+// @desc    Get total registered user count
+// @route   GET /api/users/count
+// @access  Private/Admin
+const getUserCount = asyncHandler(async (req, res) => {
+  const count = await User.countDocuments({});
+  res.json({ count });
+});
+
 export {
   authUser,
   registerUser,
@@ -206,4 +229,6 @@ export {
   getUserById,
   updateUser,
   searchUsers,
+  getUserCount,
+  checkEmailAvailability,
 };
